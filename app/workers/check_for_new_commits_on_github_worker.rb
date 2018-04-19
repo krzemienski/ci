@@ -2,6 +2,7 @@ require_relative "github_worker_base"
 require_relative "worker_scheduler"
 require_relative "../services/build_service"
 require_relative "../shared/models/job_trigger"
+require_relative "../shared/models/provider_credential"
 require_relative "../shared/logging_module"
 
 require "time"
@@ -61,7 +62,8 @@ module FastlaneCI
         git_fork_config = GitForkConfig.new(
           current_sha: pr.current_sha,
           branch: pr.branch,
-          clone_url: pr.clone_url
+          clone_url: pr.clone_url,
+          provider_type: ProviderCredential::PROVIDER_CREDENTIAL_TYPES[:github]
         )
         create_and_queue_build_task(
           sha: pr.current_sha,

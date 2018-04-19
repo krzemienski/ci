@@ -8,8 +8,8 @@ require "task_queue"
 require "faraday-http-cache"
 require "fileutils"
 
+require_relative "../models/provider_credential"
 require_relative "../logging_module"
-
 require_relative "../git_monkey_patches"
 
 module FastlaneCI
@@ -604,19 +604,21 @@ module FastlaneCI
       end
     end
 
-    def switch_to_fork(clone_url:, branch:, sha: nil, local_branch_name:, use_global_git_mutex: false)
+    # If we onlt have a git repo, and it isn't specifically from GitHub, we need to use this to switch to a fork
+    # May cause merge conflicts, so don't use it unless we must.
+    def switch_to_git_fork(clone_url:, branch:, sha: nil, local_branch_name:, use_global_git_mutex: false)
       perform_block(use_global_git_mutex: use_global_git_mutex) do
         logger.debug("Switching to branch #{branch} from forked repo: #{clone_url} (pulling into #{local_branch_name})")
 
         begin
           git.branch(local_branch_name)
-          git.pull(clone_url, branch)
+          git.pull(git_fork_config.clone_url, git_fork_config.branch)
           return true
         rescue StandardError => ex
           exception_context = {
             clone_url: clone_url,
             branch: branch,
-            sha: sha,
+            sha: current_sha,
             local_branch_name: local_branch_name
           }
           handle_exception(
@@ -626,6 +628,50 @@ module FastlaneCI
           )
           return false
         end
+      end
+    end
+
+    def switch_to_github_pr(git_fork_config:, local_branch_name:, use_global_git_mutex: false)
+      perform_block(use_global_git_mutex: use_global_git_mutex) do
+        logger.debug("Switching to PR branch #{git_fork_config.branch} (pulling into #{local_branch_name})")
+
+        begin
+          git.branch(local_branch_name)
+          git.pull(git_fork_config.clone_url, git_fork_config.branch)
+          return true
+        rescue StandardError => ex
+          exception_context = {
+            clone_url: clone_url,
+            branch: branch,
+            sha: current_sha,
+            local_branch_name: local_branch_name
+          }
+          handle_exception(
+            ex,
+            console_message: "Error switching to a fork: #{clone_url}, branch: #{branch}",
+            exception_context: exception_context
+          )
+          return false
+        end
+      end
+    end
+
+    def switch_to_fork(git_fork_config:, local_branch_name:, use_global_git_mutex: false)
+      case git_fork_config.provider_credential_type
+      when ProviderCredential::PROVIDER_CREDENTIAL_TYPES[:github]
+        switch_to_github_pr(
+          git_fork_config: git_fork_config, 
+          local_branch_name: local_branch_name, 
+          use_global_git_mutex: use_global_git_mutex
+        )
+      else
+        switch_to_git_fork(
+          clone_url: git_fork_config.clone_url, 
+          branch: git_fork_config.branch, 
+          sha: git_fork_config.current_sha, 
+          local_branch_name: local_branch_name, 
+          use_global_git_mutex: use_global_git_mutex
+        )
       end
     end
 

@@ -142,9 +142,7 @@ module FastlaneCI
 
       if git_fork_config
         pull_before_checkout_success = repo.switch_to_fork(
-          clone_url: git_fork_config.clone_url,
-          branch: git_fork_config.branch,
-          sha: git_fork_config.current_sha,
+          git_fork_config: git_fork_config,
           local_branch_name: "#{git_fork_config.branch}_local_fork",
           use_global_git_mutex: false
         )
