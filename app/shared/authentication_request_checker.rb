@@ -8,7 +8,7 @@ module FastlaneCI
   module AuthenticatedRequestChecker
     include FastlaneCI::Logging
 
-    def ensure_logged_in(route = nil)
+    def ensure_logged_in
       if route.nil?
         if defined?(self::HOME)
           route = "#{self::HOME}*"
@@ -21,7 +21,15 @@ module FastlaneCI
       logger.debug("requiring logged-in user for access to `#{route}`")
 
       before(route) do
+
         raise "ensure_logged_in requires a `route`" if route.nil?
+
+        require "pry"
+        binding.pry
+        # /projects_erb/d02bf494-1290-42a9-bb52-f128afd52cd9/builds/419
+        # /projects_erb*
+        # if request.env["REQUEST_PATH"]
+        # return if route == "/projects_erb*"
 
         logger.debug("checking if user is logged in... ")
 

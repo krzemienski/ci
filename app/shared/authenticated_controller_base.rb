@@ -12,10 +12,10 @@ module FastlaneCI
     register AuthenticatedRequestChecker
     include FastlaneCI::Logging
 
-    def initialize(app)
-      super(app)
+    ensure_logged_in
 
-      self.class.ensure_logged_in
+    def initialize(app)
+      super(app)  
     end
 
     def user

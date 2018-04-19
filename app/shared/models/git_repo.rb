@@ -401,9 +401,10 @@ module FastlaneCI
         # TODO: check if we find a better way for the initial clone to work without setting system global state
         scope = "global"
       end
-      use_credentials_command = <<~COMMAND
-        git config --#{scope} credential.helper 'store --file #{temporary_storage_path.shellescape}' #{local_folder}
-      COMMAND
+
+      # rubocop:disable Metrics/LineLength
+      use_credentials_command = "git config --#{scope} credential.helper 'store --file #{temporary_storage_path.shellescape}' #{local_folder}"
+      # rubocop:enable Metrics/LineLength
 
       # Uncomment if you want to debug git credential stuff, keeping it commented out because it's very noisey
       # logger.debug("Setting credentials for #{git_config.git_url} with command: #{use_credentials_command}")
